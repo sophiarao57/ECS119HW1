@@ -89,19 +89,15 @@ def load_input():
 
     # Standardizing the column names
     df_2019.columns = df_2019.columns.str.lower()
-    df_2020.columns = df_2019.columns.str.lower()
-    df_2021.columns = df_2019.columns.str.lower()
+    df_2020.columns = df_2020.columns.str.lower()
+    df_2021.columns = df_2021.columns.str.lower()
 
     # Restructuring the column indexes
-    # Fill out this part. You can use column access to get only the
-    # columns we are interested in using the NEW_COLUMNS variable above.
-    # Make sure you return the columns in the new order.
-    # TODO
+    # Keep only the columns we are interested in, in the new order.
+    df_2019 = df_2019[NEW_COLUMNS].copy()
+    df_2020 = df_2020[NEW_COLUMNS].copy()
+    df_2021 = df_2021[NEW_COLUMNS].copy()
 
-    # When you are done, remove the next line...
-    raise NotImplementedError
-
-    # ...and keep this line to return the dataframes.
     return [df_2019, df_2020, df_2021]
 
 def q1(dfs):
@@ -133,12 +129,14 @@ def q2(dfs):
     You can check that the "answers" to each part look
     correct by inspecting the file part1-answers.txt.
     """
-    # Check:
-    # - that all three dataframes have the same shape
-    # - the number of rows
-    # - the number of columns
-    # - the columns are listed in the correct order
-    raise NotImplementedError
+    # Same shape across all three years
+    if len({df.shape for df in dfs}) != 1:
+        return False
+    # 100 universities (rows) and 8 columns
+    if dfs[0].shape != (100, len(NEW_COLUMNS)):
+        return False
+    # Columns are listed in the correct order
+    return all(list(df.columns) == NEW_COLUMNS for df in dfs)
 
 """
 ===== Interlude: Checking your output so far =====
@@ -175,11 +173,8 @@ remember to check the output in part1-answers.txt.
 """
 
 def q3(dfs):
-    # Check:
-    # - that the set of university names in each year is the same
-    # Return:
-    # - True if they are the same, and False otherwise.
-    raise NotImplementedError
+    name_sets = [set(df["university"]) for df in dfs]
+    return all(names == name_sets[0] for names in name_sets)
 
 """
 3b (commentary).
@@ -187,6 +182,15 @@ Did the checks pass or fail?
 Comment below and explain why.
 
 === ANSWER Q3b BELOW ===
+
+The check fails (q3 returns False). 2019 and 2020 do not contain the same
+universities: three universities in the 2019 top 100 (Eindhoven University of
+Technology, Purdue University, The Ohio State University) are not in 2020,
+while three others (KTH Royal Institute of Technology, Sungkyunkwan
+University, The Hong Kong Polytechnic University) entered the top 100 in 2020.
+This is expected: the dataset is the top 100 of each year's ranking, so
+universities near the cutoff move in and out as scores change. 2020 and 2021
+contain the same set of names (they are almost identical files; see Q12a).
 
 === END OF Q3b ANSWER ===
 """
@@ -213,12 +217,15 @@ Hint:
 """
 
 def q4(dfs):
-    # Sample 5 rows from each dataframe
-    # Print out the samples
-    raise NotImplementedError
+    samples = []
+    for year, df in zip([2019, 2020, 2021], dfs):
+        sample = df.sample(5)
+        print(f"Random sample of 5 rows from {year}:")
+        print(sample)
+        samples.append(sample)
 
-    # Answer as a list of 5 university names
-    return []
+    # Answer as a list of 5 university names (2021 only)
+    return list(samples[-1]["university"])
 
 """
 Once you have implemented this part,
@@ -232,14 +239,27 @@ If you were to use this dataset for a project, what would *you* consider to be
 some advantages and drawbacks?
 
 === ANSWER Q4b BELOW ===
+
 Strengths:
-1.
-2.
+1. Clean and small: 100 rows per year, no missing values, and consistent
+   column names/types, so it is easy to load, join across years and plot.
+2. Covers several indicators (academic/employer reputation, faculty-student
+   ratio, citations) plus region, so we can compare universities and
+   countries on more than a single number, and look at change over time.
 
 Weaknesses:
-1.
-2.
-3.
+1. Only the top 100 universities are included, so there is selection bias:
+   we cannot say anything about universities outside the top 100 or about
+   what separates ranks 100 and 101.
+2. The 2021 file is nearly identical to 2020 (flawed data), and only three
+   years are available, so trend analysis is weak. The university names also
+   differ between years (e.g. "UCL", "Sungkyunkwan University(SKKU)"),
+   which makes matching fragile.
+3. Reputation scores come from subjective surveys, scores are normalized
+   (capped at 100), and the ranking methodology/weights are not documented
+   in the data. Some columns (international faculty/students) were dropped
+   and there are many rank ties, so the scores are hard to interpret causally.
+
 === END OF Q4b ANSWER ===
 """
 
@@ -264,17 +284,14 @@ Example: if there are 5 non-null values in the first column, 3 in the second, 4 
 """
 
 def q5a(dfs):
-    # TODO
-    raise NotImplementedError
-    # Remember to return the list here
-    # (Since .info() does not return any values,
-    # for this part, you will need to copy and paste
-    # the output as a hardcoded list.)
+    # Prints the non-null count of each column for 2021
+    dfs[2].info()
+    # .info() does not return anything, so the counts below were copied
+    # from its output: all 8 columns have 100 non-null entries.
+    return [100, 100, 100, 100, 100, 100, 100, 100]
 
 def q5b(dfs):
-    # TODO
-    raise NotImplementedError
-    # Remember to return the list here
+    return [int(n) for n in dfs[2].count()]
 
 """
 5c.
@@ -285,10 +302,9 @@ We will use this in the unit tests below.
 """
 
 def q5c():
-    raise NotImplementedError
-    # TODO: fill this in with the expected number
-    # num_non_null = [0, 0, ...]
-    # return num_non_null
+    # 100 universities and no missing values, for each of the 8 columns
+    num_non_null = [100] * len(NEW_COLUMNS)
+    return num_non_null
 
 """
 ===== Interlude again: Unit tests =====
@@ -316,29 +332,25 @@ from each unit test (function beginning with `test_`).
 Then, run `pytest part1.py` in the terminal.
 """
 
-@pytest.mark.skip
 def test_q1():
     dfs = load_input()
     assert len(dfs) == 3
     assert all([isinstance(df, pd.DataFrame) for df in dfs])
 
-@pytest.mark.skip
 def test_q2():
     dfs = load_input()
     assert q2(dfs)
 
-@pytest.mark.skip
+@pytest.mark.xfail
 def test_q3():
     dfs = load_input()
     assert q3(dfs)
 
-@pytest.mark.skip
 def test_q4():
     dfs = load_input()
     samples = q4(dfs)
     assert len(samples) == 5
 
-@pytest.mark.skip
 def test_q5():
     dfs = load_input()
     num_non_null = q5c()
@@ -351,12 +363,20 @@ def test_q5():
 
 === ANSWER Q6a BELOW ===
 
+test_q3 fails: q3(dfs) returns False, so `assert q3(dfs)` raises an AssertionError.
+All other tests (test_q1, test_q2, test_q4, test_q5) pass.
+
 === END OF Q6a ANSWER ===
 
 6b. For each test that fails, is it because your code
 is wrong or because the test is wrong?
 
 === ANSWER Q6b BELOW ===
+
+The test is wrong, not the code. The data genuinely differs between years
+(3 universities left and 3 joined the top 100 between 2019 and 2020), so
+the correct answer of q3 is False. The assertion that the sets are equal does
+not hold for this dataset, so test_q3 is marked @pytest.mark.xfail.
 
 === END OF Q6b ANSWER ===
 
@@ -374,8 +394,8 @@ Please include expected failures (@pytest.mark.xfail).
 """
 
 def q6c():
-    # TODO
-    raise NotImplementedError
+    # Only test_q3 fails (marked xfail above)
+    return 1
 
 """
 ===== End of interlude =====
@@ -392,9 +412,9 @@ As your answer to this part, return the number of columns in each dataframe afte
 """
 
 def q7(dfs):
-    # TODO
-    raise NotImplementedError
-    # Remember to return the list here
+    for year, df in zip([2019, 2020, 2021], dfs):
+        df["year"] = year
+    return [df.shape[1] for df in dfs]
 
 """
 8a.
@@ -404,16 +424,28 @@ As your answer, return the count for "USA" in 2021.
 """
 
 def q8a(dfs):
-    # Enter Code here
-    # TODO
-    raise NotImplementedError
-    # Remember to return the count here
+    counts = {}
+    for year, df in zip([2019, 2020, 2021], dfs):
+        top_100 = df[df["rank"] <= 100]
+        counts[year] = top_100.groupby("region").size().sort_values(ascending=False)
+        print(f"Universities per region in the top 100 in {year}:")
+        print(counts[year])
+    return int(counts[2021]["USA"])
 
 """
 8b.
 Do you notice some trend? Comment on what you observe and why might that be consistent throughout the years.
 
 === ANSWER Q8b BELOW ===
+
+The USA has the most universities in the top 100 in every year (30, 29, 29),
+followed by the UK (18-19), China (11), and Australia (6-7). The
+counts of every region barely change from year to year.
+This is consistent because the rankings change slowly: reputation surveys,
+citation counts and research funding/infrastructure of established universities
+take decades to build up, and the dominant countries (US, UK) have a large
+head start in funding, English-language publishing (which drives citations
+and reputation) and old, well-endowed universities.
 
 === END OF Q8b ANSWER ===
 """
@@ -430,10 +462,9 @@ The list should contain 5 elements.
 """
 
 def q9(dfs):
-    # Enter code here
-    # TODO
-    raise NotImplementedError
-    # Return the list here
+    attributes = ["academic reputation", "employer reputation",
+                  "faculty student", "citations per faculty", "overall score"]
+    return [float(x) for x in dfs[2][attributes].mean()]
 
 """
 10.
@@ -446,10 +477,11 @@ Then in q10, print the first 5 rows of the avg_2021 dataframe.
 """
 
 def q10_helper(dfs):
-    # Enter code here
-    # TODO
-    # Placeholder for the avg_2021 dataframe
-    avg_2021 = pd.DataFrame()
+    df_2021 = dfs[2]
+    avg_2021 = (df_2021
+                .drop(columns=["rank", "year", "university"])
+                .groupby("region")
+                .mean())
     return avg_2021
 
 def q10(avg_2021):
@@ -460,9 +492,8 @@ def q10(avg_2021):
     As your answer, simply return the number of rows printed.
     (That is, return the integer 5)
     """
-    # Enter code here
-    raise NotImplementedError
-    # Return 5
+    print(avg_2021.head(5))
+    return 5
 
 """
 ===== Questions 11-14: Exploring the avg_2021 dataframe =====
@@ -474,7 +505,9 @@ As your answer to this part, return the first row of the sorted dataframe.
 """
 
 def q11(avg_2021):
-    raise NotImplementedError
+    sorted_avg = avg_2021.sort_values("overall score", ascending=False)
+    print(sorted_avg)
+    return sorted_avg.iloc[0]
 
 """
 12a.
@@ -499,8 +532,18 @@ and the name of one country/region that went down in the rankings.
 """
 
 def q12a(avg_2021):
-    raise NotImplementedError
-    return ("TODO", "TODO")
+    # Region at the top of the 2021 ranking
+    top_region = avg_2021["overall score"].idxmax()
+
+    # Compare average overall score by region in 2019 vs. 2021
+    dfs = load_input()
+    avg_2019 = dfs[0].groupby("region")["overall score"].mean()
+    change = avg_2021["overall score"] - avg_2019
+    print("Change in average overall score, 2019 to 2021:")
+    print(change.dropna().sort_values())
+    # Region with the largest drop in average score
+    down_region = change.dropna().idxmin()
+    return (top_region, down_region)
 
 """
 12b.
@@ -508,6 +551,17 @@ Comment on why the country above is at the top of the list.
 (Note: This is an open-ended question.)
 
 === ANSWER Q12b BELOW ===
+
+Singapore tops the regional ranking with an average overall score of 91.8,
+but note that it only has two universities in the data (NUS and NTU),
+both of which score very high, so the average is based on a very small
+sample. Singapore does well because it invests heavily in a few research
+universities, has a very high faculty/student ratio (100), high citations
+per faculty (95.9) and a strong international outlook, and the country has
+no weaker universities in the top 100 to pull the average down. Large
+countries like the USA or UK have many universities in the list,
+including lower-ranked ones, which lowers their average. Between 2019 and 2021 the
+average score of South Korea went down the most (-2.35).
 
 === END OF Q12b ANSWER ===
 """
@@ -523,19 +577,39 @@ As the answer to this part, return the name of the plot you saved.
 **Hint:** You can do this using subplots (and also otherwise)
 """
 
+import matplotlib
+matplotlib.use("Agg")  # we only save figures; no display needed
 import matplotlib.pyplot as plt
 
 def q13a(avg_2021):
-    # Plot the box and whisker plot
-    # TODO
-    raise NotImplementedError
-    # return "output/part1-13a.png"
+    # One subplot per attribute so each box has its own scale
+    fig, axes = plt.subplots(1, len(avg_2021.columns), figsize=(14, 5))
+    for ax, column in zip(axes, avg_2021.columns):
+        ax.boxplot(avg_2021[column].dropna())
+        ax.set_title(column)
+        ax.set_xticks([])
+        ax.set_ylabel("average score (0-100)")
+    fig.suptitle("Distribution of regional average scores by attribute (2021)")
+    fig.tight_layout()
+    fig.savefig("output/part1-13a.png")
+    plt.close(fig)
+    return "output/part1-13a.png"
 
 """
 b. Do you observe any anomalies in the box and whisker
 plot?
 
 === ANSWER Q13b BELOW ===
+
+Yes. The attributes are on very different scales and spreads: citations per
+faculty and overall score are tightly clustered (overall 61-92, citations
+59-96), while academic reputation ranges from 2.4 (Argentina) to 85 and has a very
+wide box. Overall score has a high outlier: Singapore (91.8), far above the
+other regions (the next one is Canada at 81). The very low academic
+reputation values (Argentina 2.4, Russia 7.2) are also outliers
+compared to the median. These are averages of very few universities for
+some regions (many regions have only 1 or 2 universities), so these outliers
+are driven by small sample sizes rather than by whole countries.
 
 === END OF Q13b ANSWER ===
 """
@@ -551,15 +625,32 @@ As the answer to this part, return the name of the plot you saved.
 """
 
 def q14a(avg_2021):
-    # Enter code here
-    # TODO
-    raise NotImplementedError
-    # return "output/part1-14a.png"
+    fig, ax = plt.subplots(figsize=(7, 6))
+    ax.scatter(avg_2021["academic reputation"], avg_2021["overall score"],
+               label="region")
+    for region, row in avg_2021.iterrows():
+        ax.annotate(region, (row["academic reputation"], row["overall score"]),
+                    fontsize=7, xytext=(3, 3), textcoords="offset points")
+    ax.set_xlabel("average academic reputation")
+    ax.set_ylabel("average overall score")
+    ax.set_title("Academic reputation vs. overall score by region (2021)")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig("output/part1-14a.png")
+    plt.close(fig)
+    return "output/part1-14a.png"
 
 """
 Do you observe any general trend?
 
 === ANSWER Q14b BELOW ===
+
+There is a positive trend: regions with a higher average academic reputation tend
+to have a higher overall score, although it is quite noisy (some regions such
+as Belgium and the Netherlands have high reputation but only an average
+overall score, and Canada has low reputation but a high overall score).
+This agrees with the correlation matrix, where academic reputation and
+overall score have a modest positive correlation (about 0.39).
 
 === END OF Q14b ANSWER ===
 
@@ -582,16 +673,14 @@ As your answer, return the shape of the new dataframe.
 """
 
 def q15_helper(dfs):
-    # Return the new dataframe
-    # TODO
-    # Placeholder:
-    top_10 = pd.DataFrame()
+    # Top ten universities of each year with only their overall scores
+    tops = [df[df["rank"] <= 10][["university", "overall score"]] for df in dfs]
+    # Merging on the university name auto-assigns suffixes to the score columns
+    top_10 = tops[0].merge(tops[1], on="university").merge(tops[2], on="university")
     return top_10
 
 def q15(top_10):
-    # Enter code here
-    # TODO
-    raise NotImplementedError
+    return top_10.shape
 
 """
 16.
@@ -605,10 +694,9 @@ As your answer, return the new column names as a list.
 """
 
 def q16(top_10):
-    # Enter code here
-    # TODO
-    raise NotImplementedError
-    # return list(df.columns)
+    top_10.columns = ["university", "overall score 2019",
+                      "overall score 2020", "overall score 2021"]
+    return list(top_10.columns)
 
 """
 17a.
@@ -624,16 +712,36 @@ Note:
 """
 
 def q17a(top_10):
-    # Enter code here
-    # TODO
-    raise NotImplementedError
-    # return "output/part1-17a.png"
+    # A line chart (one line per university) makes it easy to see
+    # how each university's score changes from year to year.
+    years = [2019, 2020, 2021]
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for _, row in top_10.iterrows():
+        ax.plot(years, row.iloc[1:].astype(float), marker="o", label=row["university"])
+    ax.set_xticks(years)
+    ax.set_xlabel("year")
+    ax.set_ylabel("overall score")
+    ax.set_title("Overall score of the top 10 universities, 2019-2021")
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), fontsize=8)
+    fig.tight_layout()
+    fig.savefig("output/part1-17a.png")
+    plt.close(fig)
+    return "output/part1-17a.png"
 
 """
 17b.
 What do you observe from the plot above? Which university has remained consistent in their scores? Which have increased/decreased over the years?
 
 === ANSWER Q17b BELOW ===
+
+MIT stays at 100 in all three years, and is the most consistent. Stanford (98.6 ->
+98.4), Harvard (98.5 -> 97.4), Caltech (97.2 -> 96.9), Cambridge (95.6 -> 95.0) and the
+University of Chicago (93.2 -> 92.0) went down slightly. Oxford (96.8 -> 97.2), ETH Zurich
+(95.3 -> 95.9), Imperial (93.3 -> 94.1) and UCL (92.9 -> 94.8) went up.
+Note that 2020 and 2021 are identical (the flawed data) so all changes
+happen between 2019 and 2020 and the lines are flat afterwards.
+A line plot is appropriate since it shows change over time for each university,
+with a small number of series so that the legend stays readable.
 
 === END OF Q17b ANSWER ===
 """
@@ -660,16 +768,43 @@ As the answer to this part, return the name of the plot you saved.
 """
 
 def q18(dfs):
-    # Enter code here
-    # TODO
-    raise NotImplementedError
-    # return "output/part1-18.png"
+    # Correlation matrix of the numeric columns of the 2021 data
+    # (year is constant, so it has no correlation with anything)
+    numeric = dfs[2].select_dtypes("number").drop(columns=["year"])
+    corr = numeric.corr()
+    print(corr)
+
+    fig, ax = plt.subplots(figsize=(8, 7))
+    image = ax.imshow(corr, cmap="coolwarm", vmin=-1, vmax=1)
+    ax.set_xticks(range(len(corr.columns)))
+    ax.set_xticklabels(corr.columns, rotation=45, ha="right")
+    ax.set_yticks(range(len(corr.columns)))
+    ax.set_yticklabels(corr.columns)
+    for i in range(len(corr)):
+        for j in range(len(corr)):
+            ax.text(j, i, f"{corr.iloc[i, j]:.2f}", ha="center", va="center", fontsize=8)
+    fig.colorbar(image, ax=ax, label="correlation coefficient")
+    ax.set_title("Correlation matrix of 2021 attributes")
+    fig.tight_layout()
+    fig.savefig("output/part1-18.png")
+    plt.close(fig)
+    return "output/part1-18.png"
 
 """
 19. Comment on at least one entry in the matrix you obtained in the previous
 part that you found surprising or interesting.
 
 === ANSWER Q19 BELOW ===
+
+The correlation between employer reputation and faculty/student ratio is 0.69,
+which is by far the strongest between two different indicators, and
+was surprising: I expected the employer survey to be unrelated to
+staffing ratios. A possible explanation is that wealthy, well-known
+universities do well on both. Also interesting: citations per faculty
+(0.77) correlates with overall score much more than academic reputation
+(0.39), and academic reputation is almost uncorrelated with citations (0.10),
+which suggests that the reputation survey and the research output measure
+different things. Rank has a -0.99 correlation with overall score, as expected.
 
 === END OF Q19 ANSWER ===
 """
@@ -706,15 +841,32 @@ Use your new column to sort the data by the new values and return the top 10 uni
 
 """
 
+def add_research_score(df):
+    """
+    Add a "research score" column to a copy of df.
+
+    It rewards academic reputation, faculty/student ratio and citations,
+    and discounts employer reputation (framed as a commercial-bias metric).
+    The weights happen to favor Berkeley, whose employer reputation is low.
+    """
+    df = df.copy()
+    df["research score"] = (0.75 * df["academic reputation"]
+                            - 1.0 * df["employer reputation"]
+                            + 0.75 * df["faculty student"]
+                            + 1.0 * df["citations per faculty"])
+    return df
+
+BERKELEY = "University of California, Berkeley (UCB)"
+
 def q20a(dfs):
-    # TODO
-    raise NotImplementedError
-    # For your answer, return the score for Berkeley in the new column.
+    df = add_research_score(dfs[2])
+    # Return the score for Berkeley in the new column.
+    return float(df.loc[df["university"] == BERKELEY, "research score"].iloc[0])
 
 def q20b(dfs):
-    # TODO
-    raise NotImplementedError
-    # For your answer, return the top 10 university names as a list.
+    df = add_research_score(dfs[2])
+    top = df.sort_values("research score", ascending=False).head(10)
+    return list(top["university"])
 
 """
 21. Exploring data manipulation and falsification, continued
@@ -733,8 +885,13 @@ Return the top 10 university names as a list from the falsified data.
 """
 
 def q21():
-    # TODO
-    raise NotImplementedError
+    # data/2021_falsified.csv is a copy of data/2021.csv in which Berkeley's
+    # scores were raised to 100 and its rank changed to 1
+    # (every university that was ranked above it moved down one place).
+    df = pd.read_csv("data/2021_falsified.csv", encoding="latin-1")
+    df.columns = df.columns.str.lower()
+    df = df[NEW_COLUMNS].sort_values("rank", kind="stable")
+    return list(df["university"].head(10))
 
 """
 22. Exploring data manipulation and falsification, continued
@@ -745,6 +902,21 @@ if you were a "bad actor" trying to manipulate the rankings?
 Which do you think would be the most difficult to detect?
 
 === ANSWER Q22 BELOW ===
+
+Most effective: changing the source data (Q21). The falsified file feeds every
+downstream analysis (averages, plots, correlations), so the manipulated
+result is reproduced consistently everywhere and nobody has to trust a
+special formula. The scoring function in Q20 is also easy to do, but the
+weights are visible and the resulting top 10 is very different from the
+published ranking (e.g. Tsinghua and KU Leuven land in the top 5), which
+invites questions about the formula.
+
+Most difficult to detect: a small, subtle change to the source data (a few
+points on one indicator for one university), because it is hard to tell
+apart from the noise in survey-based scores unless someone has the
+original data, or checks that the overall score is consistent with its
+components. A blunt change like the one in Q21 (a 100 in every indicator, rank 1)
+is easy to catch with simple sanity checks.
 
 === END OF Q22 ANSWER ===
 """
