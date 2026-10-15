@@ -1,6 +1,6 @@
 # Homework 1: Data Processing and Performance
 
-**Due: Friday, October 16, 2025** (11:59pm)
+**Due: Monday, October 19, 2025** (11:59pm)
 
 This homework has three parts.
 
